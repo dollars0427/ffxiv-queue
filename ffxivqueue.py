@@ -1,6 +1,7 @@
 import pyscreenshot as ImageGrab
 import time
 import tkinter as tk
+import requests
 
 root = tk.Tk()
 screen_width = root.winfo_screenwidth()
@@ -14,4 +15,7 @@ y2 = y1 + 30
 if __name__ == '__main__':
     time.sleep(5)
     im = ImageGrab.grab(bbox=(x1, y1, x2, y2))
-    im.show()
+    im.save('queuenum.png')
+    with open('queuenum.png', 'rb') as f:
+        r = requests.post('http://127.0.0.1:1000', files={'queuenum.png': f})
+        print(r.text)
