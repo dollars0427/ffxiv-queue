@@ -16,6 +16,8 @@ if __name__ == '__main__':
     time.sleep(5)
     im = ImageGrab.grab(bbox=(x1, y1, x2, y2))
     im.save('queuenum.png')
+    im.show()
     with open('queuenum.png', 'rb') as f:
-        r = requests.post('http://127.0.0.1:1000', files={'queuenum.png': f})
+        data = {'qq': 2590519016}
+        r = requests.post('http://127.0.0.1:1000', data=data, files={'queuenum.png': f})
         print(r.text)
