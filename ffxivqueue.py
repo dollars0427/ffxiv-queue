@@ -21,8 +21,24 @@ y1 = screen_height / 2 - 20
 x2 = x1 + 40
 y2 = y1 + 30
 
-first_run = True
-should_stop = False
+class RepeatingTimer(_Timer):
+    def __init__(self, interval, function, args=[], kwargs={}):
+        Thread.__init__(self)
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.finished = Event()
+
+    def cancel(self):
+        """Stop the timer if it hasn't finished yet"""
+        self.finished.set()
+
+    def run(self):
+        self.finished.wait(self.interval)
+        if not self.finished.is_set():
+            self.function(*self.args, **self.kwargs)
+        self.finished.set()
 
 def before_screenshot():
     qq_number_label.pack_forget()
@@ -35,13 +51,11 @@ def before_screenshot():
 
     repeat_time_min = int(repeat_time_value.get())
     repeat_time_second = repeat_time_min * 60
-    t = Timer(repeat_time_second, screenshot)
+    t = RepeatingTimer(repeat_time_second, screenshot)
     t.start()
 
 #停止Screenshot動作
 def stop_screenshot():
-    global should_stop
-    should_stop = True
     title_label.pack()
     qq_number_label.pack()
     qq_nubmer.pack()
@@ -56,23 +70,15 @@ def screenshot():
     with open('save_data.json', 'w') as save_file:
         save_data = {'qq_number': qq}
         json.dump(save_data, save_file)
-    repeat_time_min = int(repeat_time_value.get())
-    repeat_time_second = repeat_time_min * 60
+
     #在接收停止訊號前，不斷重覆抓取動作並發送至API
-    global should_stop
-    if should_stop != True:
-        im = ImageGrab.grab(bbox=(x1, y1, x2, y2))
-        im.save('queuenum.png')
-        with open('queuenum.png', 'rb') as f:
-            data = {'qq': qq}
-            r = requests.post(setting['api_url'], data=data, files={'queuenum.png': f})
-            print(r.text)
-            time.sleep(repeat_time_second)
-            screenshot()
-    else:
-        print('Stopped!')
-        first_run = True
-        should_stop = False
+    im = ImageGrab.grab(bbox=(x1, y1, x2, y2))
+    im.save('queuenum.png')
+    with open('queuenum.png', 'rb') as f:
+        data = {'qq': qq}
+        r = requests.post(setting['api_url'], data=data, files={'queuenum.png': f})
+        print(r.text)
+
 #建构介面
 win.title('FF14 排队检测器')
 win.geometry('500x300')
